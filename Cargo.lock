@@ -295,7 +295,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tradesize"
+name = "ts"
 version = "0.1.0"
 dependencies = [
  "comfy-table",

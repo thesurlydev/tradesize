@@ -6,54 +6,41 @@ use currency_rs::{Currency};
 #[derive(Debug, Clone, Copy)]
 struct TradeSize {
     pub account_equity: f64,
-    risk_percent: f64,
-    // usually 1 to 2%
-    risk_equity: f64,
-    // account_equity * risk_percent
-    risk_per_unit: f64,
     // price - stop_loss
     price: f64,
     // current price
     stop_loss: f64,
-    // number of shares to buy which is calculated
-    num_shares: u32,
-    // price to buy number of shares
-    total_price: f64,
 }
 
 impl TradeSize {
-    fn new(account_equity: f64, risk_percent: f64, price: f64, stop_loss: f64) -> TradeSize {
-        let risk_equity = Currency::new_float(account_equity, None).multiply((risk_percent / 100.0) as f64).value();
-        let risk_per_unit = Currency::new_float(price, None).subtract(stop_loss).value();
-        let num_shares = (risk_equity / risk_per_unit) as u32;
-        let total_price = Currency::new_float(price, None).multiply(num_shares as f64).value();
+    fn new(account_equity: f64, price: f64, stop_loss: f64) -> TradeSize {
         TradeSize {
             account_equity,
-            risk_percent,
-            risk_equity,
-            risk_per_unit,
             price,
             stop_loss,
-            num_shares,
-            total_price,
         }
+    }
+
+    fn risk_per_unit(&self) -> f64 {
+        Currency::new_float(self.price, None).subtract(self.stop_loss).value()
+    }
+
+    fn risk_equity(&self, risk_percent: f64) -> f64 {
+        Currency::new_float(self.account_equity, None).multiply((risk_percent / 100.0) as f64).value()
     }
 
     fn per_unit_risk(&self) -> Currency<'static> {
         Currency::new_float(self.price, None).subtract(self.stop_loss)
     }
 
-    fn from_args(account_equity: f64, price: f64, stop_loss: f64) -> TradeSize {
-        TradeSize {
-            account_equity,
-            risk_percent: 0.0,
-            risk_equity: 0.0,
-            risk_per_unit: 0.0,
-            price,
-            stop_loss,
-            num_shares: 0,
-            total_price: 0.0,
-        }
+    // number of shares to buy
+    fn num_shares(&self, risk_percent: f64) -> u32 {
+        (self.risk_equity(risk_percent) / self.risk_per_unit()) as u32
+    }
+
+    // price to buy number of shares
+    fn total_price(&self, risk_percent: f64) -> f64 {
+        Currency::new_float(self.price, None).multiply(self.num_shares(risk_percent) as f64).value()
     }
 }
 
@@ -61,27 +48,24 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
 
     if args.is_empty() || args.len() != 4 {
-        println!();
-        println!("Usage: tradesize [ACCOUNT_EQUITY] [PRICE] [STOP_LOSS]");
+        eprintln!("Usage: tradesize [ACCOUNT_EQUITY] [PRICE] [STOP_LOSS]");
         std::process::exit(1);
     }
 
     let account_equity = f64::from_str(&args[1]).unwrap();
     let price = f64::from_str(&args[2]).unwrap();
     let stop_loss = f64::from_str(&args[3]).unwrap();
-    let trade_size = TradeSize::from_args(account_equity, price, stop_loss);
+    let trade_size = TradeSize::new(account_equity, price, stop_loss);
 
     input_table(trade_size);
-
     risk_table(trade_size);
-
-    println!();
 }
 
 fn input_table(ts: TradeSize) {
     let mut input_table = Table::new();
+    const INPUT_HEADERS: [&str; 4] = ["Equity", "Price", "Stop-loss", "Per-unit Risk"];
     input_table
-        .set_header(vec!["Equity", "Price", "Stop-loss", "Per-unit Risk"])
+        .set_header(INPUT_HEADERS)
         .add_row(vec![
             Currency::new_float(ts.account_equity, None).format().as_str(),
             Currency::new_float(ts.price, None).format().as_str(),
@@ -95,23 +79,22 @@ fn input_table(ts: TradeSize) {
         column.set_cell_alignment(CellAlignment::Right);
     }
 
-    println!();
-    println!("Inputs:");
+    println_padded("Inputs:");
     println!("{input_table}");
 }
 
 fn risk_table(ts: TradeSize) {
     let mut risk_table = Table::new();
-    let mut risk_percent = 1.0;
-    const MAX_RISK_PERCENT: f64 = 2.0;
+    const RISK_HEADERS: [&str; 3] = ["% Risk", "Shares", "Total Price"];
     const RISK_INCREMENT: f64 = 0.25;
+    const MAX_RISK_PERCENT: f64 = 2.0;
+    let mut risk_percent: f64 = 1.0;
     while risk_percent <= MAX_RISK_PERCENT {
-        let ts = TradeSize::new(ts.account_equity, risk_percent, ts.price, ts.stop_loss);
-        risk_table.set_header(vec!["% Risk", "Shares", "Total Price"]);
+        risk_table.set_header(RISK_HEADERS);
         risk_table.add_row(vec![
-            format!("{pct:.*}%", 2, pct = ts.risk_percent),
-            ts.num_shares.to_string(),
-            Currency::new_float(ts.total_price, None).format(),
+            format!("{pct:.*}%", 2, pct = risk_percent),
+            ts.num_shares(risk_percent).to_string(),
+            ts.total_price(risk_percent).to_string(),
         ]);
         risk_percent += RISK_INCREMENT;
     }
@@ -121,7 +104,11 @@ fn risk_table(ts: TradeSize) {
         column.set_cell_alignment(CellAlignment::Right);
     }
 
-    println!();
-    println!("Outputs:");
+    println_padded("Outputs:");
     println!("{risk_table}");
+}
+
+fn println_padded(msg: &str ) {
+    println!();
+    println!("{msg}");
 }
