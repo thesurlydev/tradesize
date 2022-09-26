@@ -25,22 +25,22 @@ impl TradeSize {
         Currency::new_float(self.price, None).subtract(self.stop_loss).value()
     }
 
-    fn risk_equity(&self, risk_percent: f64) -> f64 {
-        Currency::new_float(self.account_equity, None).multiply((risk_percent / 100.0) as f64).value()
-    }
-
     fn per_unit_risk(&self) -> Currency<'static> {
         Currency::new_float(self.price, None).subtract(self.stop_loss)
     }
 
     // number of shares to buy
     fn num_shares(&self, risk_percent: f64) -> u32 {
-        (self.risk_equity(risk_percent) / self.risk_per_unit()) as u32
+        let risk_equity = Currency::new_float(self.account_equity, None)
+            .multiply((risk_percent / 100.0) as f64)
+            .value();
+        (risk_equity / self.risk_per_unit()) as u32
     }
 
     // price to buy number of shares
     fn total_price(&self, risk_percent: f64) -> Currency<'static> {
-        Currency::new_float(self.price, None).multiply(self.num_shares(risk_percent) as f64)
+        Currency::new_float(self.price, None)
+            .multiply(self.num_shares(risk_percent) as f64)
     }
 }
 
@@ -108,7 +108,7 @@ fn risk_table(ts: TradeSize) {
     println!("{risk_table}");
 }
 
-fn println_padded(msg: &str ) {
+fn println_padded(msg: &str) {
     println!();
     println!("{msg}");
 }
