@@ -5,22 +5,33 @@ A command line tool that when given account equity, price and stop-loss it will 
 ## usage
 
 ```shell
-Usage: tradesize [ACCOUNT_EQUITY] [PRICE] [STOP_LOSS]
+Usage: ts [ACCOUNT_EQUITY] [PRICE] [STOP_LOSS]
 ```
 
 ## example
 
 ```shell
-$ tradesize 30000 50 49.2
+$ ts 5000 5 4
 
-       Equity: $30,000.00
-        Price: $50.00
-    Stop-loss: $49.20
-Per-unit Risk: $0.80
+Inputs:
++-----------+-------+-----------+---------------+
+|    Equity | Price | Stop-loss | Per-unit Risk |
++===============================================+
+| $5,000.00 | $5.00 |     $4.00 |         $1.00 |
++-----------+-------+-----------+---------------+
 
-   1.00% risk: 375 shares
-   1.25% risk: 468 shares
-   1.50% risk: 562 shares
-   1.75% risk: 656 shares
-   2.00% risk: 750 shares
+Outputs:
++--------+--------+-------------+
+| % Risk | Shares | Total Price |
++===============================+
+|   1.00 |     50 |     $250.00 |
+|--------+--------+-------------|
+|   1.25 |     62 |     $310.00 |
+|--------+--------+-------------|
+|   1.50 |     75 |     $375.00 |
+|--------+--------+-------------|
+|   1.75 |     87 |     $435.00 |
+|--------+--------+-------------|
+|   2.00 |    100 |     $500.00 |
++--------+--------+-------------+
 ```

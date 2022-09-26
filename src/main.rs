@@ -39,8 +39,8 @@ impl TradeSize {
     }
 
     // price to buy number of shares
-    fn total_price(&self, risk_percent: f64) -> f64 {
-        Currency::new_float(self.price, None).multiply(self.num_shares(risk_percent) as f64).value()
+    fn total_price(&self, risk_percent: f64) -> Currency<'static> {
+        Currency::new_float(self.price, None).multiply(self.num_shares(risk_percent) as f64)
     }
 }
 
@@ -48,7 +48,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
 
     if args.is_empty() || args.len() != 4 {
-        eprintln!("Usage: tradesize [ACCOUNT_EQUITY] [PRICE] [STOP_LOSS]");
+        eprintln!("Usage: ts [ACCOUNT_EQUITY] [PRICE] [STOP_LOSS]");
         std::process::exit(1);
     }
 
@@ -92,9 +92,9 @@ fn risk_table(ts: TradeSize) {
     while risk_percent <= MAX_RISK_PERCENT {
         risk_table.set_header(RISK_HEADERS);
         risk_table.add_row(vec![
-            format!("{pct:.*}%", 2, pct = risk_percent),
+            format!("{pct:.*}", 2, pct = risk_percent),
             ts.num_shares(risk_percent).to_string(),
-            ts.total_price(risk_percent).to_string(),
+            ts.total_price(risk_percent).format(),
         ]);
         risk_percent += RISK_INCREMENT;
     }
