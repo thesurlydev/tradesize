@@ -5,10 +5,8 @@ use currency_rs::{Currency};
 
 #[derive(Debug, Clone, Copy)]
 struct TradeSize {
-    pub account_equity: f64,
-    // price - stop_loss
+    account_equity: f64,
     price: f64,
-    // current price
     stop_loss: f64,
 }
 
@@ -52,9 +50,9 @@ fn main() {
         std::process::exit(1);
     }
 
-    let account_equity = f64::from_str(&args[1]).unwrap();
-    let price = f64::from_str(&args[2]).unwrap();
-    let stop_loss = f64::from_str(&args[3]).unwrap();
+    let account_equity = f64::from_str(&args[1]).expect("Error parsing 'account_equity'");
+    let price = f64::from_str(&args[2]).expect("Error parsing 'price'");
+    let stop_loss = f64::from_str(&args[3]).expect("Error parsing 'stop_loss'");
     let trade_size = TradeSize::new(account_equity, price, stop_loss);
 
     input_table(trade_size);
